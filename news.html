@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HLS Player</title>
+
+  <!-- Plyr CSS -->
+  <link rel="stylesheet" href="https://cdn.plyr.io/3.7.8/plyr.css">
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f4f4;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      margin: 0;
+    }
+    .container {
+      max-width: 800px;
+      width: 100%;
+      background: #fff;
+      padding: 20px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+      border-radius: 10px;
+      text-align: center;
+    }
+    .btn-start {
+      background-color: #007BFF;
+      color: white;
+      padding: 10px 20px;
+      font-size: 16px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      margin-top: 20px;
+    }
+    .btn-start:hover {
+      background-color: #0056b3;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <video id="video-player" controls crossorigin playsinline poster="https://bitdash-a.akamaihd.net/content/sintel/poster.png" style="width: 100%; max-width: 700px;">
+      <!-- Empty source initially -->
+    </video>
+    <button class="btn-start" id="start-btn">Start Video</button>
+  </div>
+
+  <!-- HLS.js Script -->
+  <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+  <!-- Plyr Script -->
+  <script src="https://cdn.plyr.io/3.7.8/plyr.polyfilled.js"></script>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const video = document.getElementById("video-player");
+      const startButton = document.getElementById("start-btn");
+
+      let hls;  // HLS.js instance
+
+      // Function to initialize the video stream
+      function startVideoStream() {
+        console.log("Initializing video stream...");
+
+        // Initialize Plyr if you want to use it for custom controls
+        const player = new Plyr(video, {
+          captions: { active: true, update: true, language: 'en' }
+        });
+
+        // HLS.js for non-Safari browsers
+        if (Hls.isSupported()) {
+          console.log("HLS.js is supported.");
+          hls = new Hls({ debug: true });
+          const source = "http://localhost:9000/ad?text=1GskIS0pxBQw8Rp9otDzUdLI-yzxcBrDe"; // Your .m3u8 path
+
+          hls.loadSource(source);
+          hls.attachMedia(video);
+
+          console.log("HLS.js manifest loaded.");
+
+          // Event listeners for logging and error handling
+          hls.on(Hls.Events.MANIFEST_PARSED, () => {
+            console.log("HLS manifest parsed.");
+          });
+
+          hls.on(Hls.Events.LEVEL_LOADED, (event, data) => {
+            console.log("Loaded level:", data.level);
+            console.log("Loaded level details:", data.details);
+          });
+
+          hls.on(Hls.Events.FRAG_LOADED, (event, data) => {
+            console.log("Fragment loaded:", data.frag);
+            console.log("Fragment details:", data);
+          });
+
+          hls.on(Hls.Events.ERROR, (event, data) => {
+            console.error("HLS.js error:", data);
+          });
+
+          window.hls = hls;
+        } else if (video.canPlayType("application/vnd.apple.mpegurl")) {
+          // Use native HLS support for Safari
+          const source = "http://localhost:9000/ad?text=1GskIS0pxBQw8Rp9otDzUdLI-yzxcBrDe"; // Your .m3u8 path
+          video.src = source;
+          console.log("Native HLS support detected.");
+        } else {
+          console.error("HLS is not supported in this browser.");
+        }
+      }
+
+      // Button functionality to start the video stream
+      startButton.addEventListener('click', () => {
+        startVideoStream();
+        video.play();
+        startButton.style.display = 'none';  // Hide the button after video starts
+        console.log("Video playback started.");
+      });
+    });
+  </script>
+</body>
+</html>
